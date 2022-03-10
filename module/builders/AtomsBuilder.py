@@ -14,7 +14,8 @@ class AtomsBuilder:
 
     def build_atoms(self,
                     atoms_definitions: Iterable[AtomDefinition],
-                    freedom_coefficients: Dict[PositionDefinition, List[float]] = None) -> List[Atom]:
+                    freedom_coefficients: Dict[PositionDefinition, List[float]] = None) \
+            -> List[Atom]:
         if freedom_coefficients is None:
             freedom_coefficients = dict()
 

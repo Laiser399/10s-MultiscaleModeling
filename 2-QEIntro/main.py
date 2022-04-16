@@ -1,16 +1,15 @@
 from abc import ABC, abstractmethod
 from typing import Sequence
 
-from pydantic.dataclasses import dataclass
+from pydantic import BaseModel
 
 
-class BaseBlock(ABC):
+class BaseBlock(ABC, BaseModel):
     @abstractmethod
     def create_block(self) -> str:
         pass
 
 
-@dataclass
 class ControlBlock(BaseBlock):
     calculation: str
     prefix: str
@@ -19,14 +18,13 @@ class ControlBlock(BaseBlock):
 
     def create_block(self) -> str:
         return f'&control\n' \
-               f'\tcalculation = \'{self.calculation}\'\n' \
-               f'\tprefix = \'{self.prefix}\'\n' \
-               f'\tpseudo_dir = \'{self.pseudo_dir}\'\n' \
-               f'\toutdir = \'{self.outdir}\'\n' \
+               f'    calculation = \'{self.calculation}\'\n' \
+               f'    prefix = \'{self.prefix}\'\n' \
+               f'    pseudo_dir = \'{self.pseudo_dir}\'\n' \
+               f'    outdir = \'{self.outdir}\'\n' \
                f'/\n'
 
 
-@dataclass
 class SystemBlock(BaseBlock):
     ibrav: int
     A: float
@@ -37,23 +35,21 @@ class SystemBlock(BaseBlock):
 
     def create_block(self) -> str:
         return f'&system\n' \
-               f'\tibrav = {self.ibrav}\n' \
-               f'\tA = {self.A}\n' \
-               f'\tnat = {self.nat}\n' \
-               f'\tntyp = {self.ntyp}\n' \
-               f'\tecutwfc = {self.ecutwfc}\n' \
-               f'\tecutrho = {self.ecutrho}\n' \
+               f'    ibrav = {self.ibrav}\n' \
+               f'    A = {self.A}\n' \
+               f'    nat = {self.nat}\n' \
+               f'    ntyp = {self.ntyp}\n' \
+               f'    ecutwfc = {self.ecutwfc}\n' \
+               f'    ecutrho = {self.ecutrho}\n' \
                f'/\n'
 
 
-@dataclass
 class ElectronsBlock(BaseBlock):
     def create_block(self) -> str:
         return f'&electrons\n' \
                f'/\n'
 
 
-@dataclass
 class CustomBlock(BaseBlock):
     block_name: str
     options: Sequence[str] = tuple()
@@ -65,14 +61,13 @@ class CustomBlock(BaseBlock):
             self.options
         ))
         lines_str = ''.join(map(
-            lambda x: f'\t{x}\n',
+            lambda x: f'    {x}\n',
             self.lines
         ))
         return f'{self.block_name}{options_str}\n' \
                f'{lines_str}'
 
 
-@dataclass
 class QEConfiguration(BaseBlock):
     control: ControlBlock
     system: SystemBlock
@@ -91,30 +86,45 @@ class QEConfiguration(BaseBlock):
                + custom_blocks_str
 
 
-c = QEConfiguration(
-    ControlBlock(
-        'scf',
-        'cubic',
-        './SSSP_1.1.2_PBE_precision/',
-        './out/',
+# todo заменить значения в соответствии с вариантом задачи
+base_configuration = QEConfiguration(
+    control=ControlBlock(
+        calculation='scf',
+        prefix='base',
+        pseudo_dir='./SSSP_1.1.2_PBE_precision/',
+        outdir='./out/test/',
     ),
-    SystemBlock(
-        1,
-        6.46,
-        8,
-        1,
-        70,
-        560
+    system=SystemBlock(
+        ibrav=2,
+        A=6.46,
+        nat=2,
+        ntyp=1,
+        ecutwfc=70,
+        ecutrho=560
     ),
-    ElectronsBlock(),
-    [
+    electrons=ElectronsBlock(),
+    custom_blocks=[
         CustomBlock(
-            'ATOMIC_SPECIES',
+            block_name='ATOMIC_SPECIES',
             lines=[
                 'Sn 118.71 Sn_pbe_v1.uspp.F.UPF'
             ]
+        ),
+        CustomBlock(
+            block_name='ATOMIC_POSITIONS',
+            options=['crystal'],
+            lines=[
+                'Sn 0.0 0.0 0.0',
+                'Sn 0.25 0.25 0.25'
+            ]
+        ),
+        CustomBlock(
+            block_name='K_POINTS',
+            options=['automatic'],
+            lines=['8 8 8 0 0 0']
         )
     ]
 )
 
-print(c.create_block())
+with open('./in/test.txt', 'w') as output_file:
+    output_file.write(base_configuration.create_block())

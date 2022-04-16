@@ -1,0 +1,86 @@
+from abc import ABC, abstractmethod
+from typing import Sequence
+
+from pydantic import BaseModel
+
+
+class BaseBlock(ABC, BaseModel):
+    @abstractmethod
+    def create_block(self) -> str:
+        pass
+
+
+class ControlBlock(BaseBlock):
+    calculation: str
+    prefix: str
+    pseudo_dir: str
+    outdir: str
+
+    def create_block(self) -> str:
+        return f'&control\n' \
+               f'    calculation = \'{self.calculation}\'\n' \
+               f'    prefix = \'{self.prefix}\'\n' \
+               f'    pseudo_dir = \'{self.pseudo_dir}\'\n' \
+               f'    outdir = \'{self.outdir}\'\n' \
+               f'/\n'
+
+
+class SystemBlock(BaseBlock):
+    ibrav: int
+    A: float
+    nat: int
+    ntyp: int
+    ecutwfc: float
+    ecutrho: float
+
+    def create_block(self) -> str:
+        return f'&system\n' \
+               f'    ibrav = {self.ibrav}\n' \
+               f'    A = {self.A}\n' \
+               f'    nat = {self.nat}\n' \
+               f'    ntyp = {self.ntyp}\n' \
+               f'    ecutwfc = {self.ecutwfc}\n' \
+               f'    ecutrho = {self.ecutrho}\n' \
+               f'/\n'
+
+
+class ElectronsBlock(BaseBlock):
+    def create_block(self) -> str:
+        return f'&electrons\n' \
+               f'/\n'
+
+
+class CustomBlock(BaseBlock):
+    block_name: str
+    options: Sequence[str] = tuple()
+    lines: Sequence[str] = tuple()
+
+    def create_block(self) -> str:
+        options_str = ''.join(map(
+            lambda x: f' {x}',
+            self.options
+        ))
+        lines_str = ''.join(map(
+            lambda x: f'    {x}\n',
+            self.lines
+        ))
+        return f'{self.block_name}{options_str}\n' \
+               f'{lines_str}'
+
+
+class QEConfiguration(BaseBlock):
+    control: ControlBlock
+    system: SystemBlock
+    electrons: ElectronsBlock
+    custom_blocks: Sequence[CustomBlock]
+
+    def create_block(self) -> str:
+        custom_blocks_str = ''.join(map(
+            lambda x: x.create_block(),
+            self.custom_blocks
+        ))
+
+        return self.control.create_block() \
+               + self.system.create_block() \
+               + self.electrons.create_block() \
+               + custom_blocks_str

@@ -9,6 +9,14 @@ class BaseBlock(ABC, BaseModel):
     def create_block(self) -> str:
         pass
 
+    @classmethod
+    def _create_field(cls, name: str, value: Optional, quoted: bool = False):
+        if value is None:
+            return ''
+        if quoted:
+            return f'    {name} = \'{value}\'\n'
+        return f'    {name} = {value}\n'
+
 
 class ControlBlock(BaseBlock):
     calculation: str
@@ -32,6 +40,9 @@ class SystemBlock(BaseBlock):
     ntyp: int
     ecutwfc: float
     ecutrho: float
+    occupations: Optional[str]
+    nspin: Optional[int]
+    tot_magnetization: Optional[int]
 
     def create_block(self) -> str:
         return f'&system\n' \
@@ -41,6 +52,9 @@ class SystemBlock(BaseBlock):
                f'    ntyp = {self.ntyp}\n' \
                f'    ecutwfc = {self.ecutwfc}\n' \
                f'    ecutrho = {self.ecutrho}\n' \
+               f'{self._create_field("occupations", self.occupations, True)}' \
+               f'{self._create_field("nspin", self.nspin)}' \
+               f'{self._create_field("tot_magnetization", self.tot_magnetization)}' \
                f'/\n'
 
 

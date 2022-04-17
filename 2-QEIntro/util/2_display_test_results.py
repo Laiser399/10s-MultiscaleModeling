@@ -29,6 +29,7 @@ def show_ecutwfc_test():
     plt.ylabel('Total energy (Ry)')
     plt.title(f'Fixed k = {fixed_k}')
     plt.legend(['E(ecutwfc), k = const'])
+    plt.tight_layout()
     plt.show()
 
 
@@ -46,6 +47,7 @@ def show_k_test():
     plt.ylabel('Total energy (Ry)')
     plt.legend(['E(k), ecutwfc = const'])
     plt.title(f'Fixed ecutwfc = {fixed_ecutwfc}')
+    plt.tight_layout()
     plt.show()
 
 

@@ -21,7 +21,7 @@ configuration = QEConfiguration(
     ),
     ions=IonsBlock(),
     cell=CellBlock(),
-    custom_blocks=[
+    additional_blocks=[
         CustomBlock(
             block_name='ATOMIC_SPECIES',
             lines=[

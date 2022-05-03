@@ -38,7 +38,7 @@ def create_configuration(name, lattice_constant):
         electrons=ElectronsBlock(
             conv_thr=1e-8
         ),
-        custom_blocks=[
+        additional_blocks=[
             CustomBlock(
                 block_name='ATOMIC_SPECIES',
                 lines=[

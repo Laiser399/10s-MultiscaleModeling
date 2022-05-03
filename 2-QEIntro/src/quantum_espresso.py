@@ -105,14 +105,14 @@ class QEConfiguration(BaseBlock):
     electrons: ElectronsBlock
     ions: Optional[IonsBlock]
     cell: Optional[CellBlock]
-    custom_blocks: Sequence[CustomBlock]
+    additional_blocks: Sequence[BaseBlock]
 
     def create_block(self) -> str:
         ions_str = self.ions.create_block() if self.ions is not None else ''
         cell_str = self.cell.create_block() if self.cell is not None else ''
-        custom_blocks_str = ''.join(map(
+        additional_blocks_str = ''.join(map(
             lambda x: x.create_block(),
-            self.custom_blocks
+            self.additional_blocks
         ))
 
         return self.control.create_block() \
@@ -120,4 +120,4 @@ class QEConfiguration(BaseBlock):
                + self.electrons.create_block() \
                + ions_str \
                + cell_str \
-               + custom_blocks_str
+               + additional_blocks_str

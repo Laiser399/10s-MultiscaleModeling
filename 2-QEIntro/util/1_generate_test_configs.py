@@ -1,6 +1,6 @@
 from typing import Sequence
 
-from src.quantum_espresso import QEConfiguration, ControlBlock, SystemBlock, ElectronsBlock, CustomBlock
+from src.quantum_espresso import QEConfiguration, ControlBlock, SystemBlock, ElectronsBlock, CustomBlock, BaseBlock
 
 base_configuration = QEConfiguration(
     control=ControlBlock(
@@ -18,7 +18,7 @@ base_configuration = QEConfiguration(
         ecutrho=560
     ),
     electrons=ElectronsBlock(),
-    custom_blocks=[
+    additional_blocks=[
         CustomBlock(
             block_name='ATOMIC_SPECIES',
             lines=[
@@ -47,14 +47,10 @@ def fix_K_BLOCK(k_block: CustomBlock, k: int) -> CustomBlock:
     return k_block
 
 
-def fix_k_block_within_custom_blocks(custom_blocks: Sequence[CustomBlock], k: int):
-    list(map(
-        lambda x: fix_K_BLOCK(x, k),
-        filter(
-            lambda x: x.block_name == 'K_POINTS',
-            custom_blocks
-        )
-    ))
+def fix_k_block_within_custom_blocks(additional_blocks: Sequence[BaseBlock], k: int):
+    for block in additional_blocks:
+        if isinstance(block, CustomBlock) and block.block_name == 'K_POINTS':
+            fix_K_BLOCK(block, k)
 
 
 def get_config_input_file_path(config_name: str):
@@ -83,7 +79,7 @@ def generate_config(configuration: QEConfiguration, config_name, k: int, ecutwfc
     configuration.control.outdir = f'./out/{config_name}'
     configuration.system.ecutwfc = ecutwfc
     configuration.system.ecutrho = ecutrho_coefficient * ecutwfc
-    fix_k_block_within_custom_blocks(configuration.custom_blocks, k)
+    fix_k_block_within_custom_blocks(configuration.additional_blocks, k)
 
     with open(config_input_file_path, 'w') as output_file:
         output_file.write(configuration.create_block())

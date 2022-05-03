@@ -19,7 +19,7 @@ configuration = QEConfiguration(
         tot_magnetization=2
     ),
     electrons=ElectronsBlock(),
-    custom_blocks=[
+    additional_blocks=[
         CustomBlock(
             block_name='ATOMIC_SPECIES',
             lines=[

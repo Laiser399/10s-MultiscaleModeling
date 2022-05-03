@@ -11,7 +11,7 @@ base_configuration = QEConfiguration(
     ),
     system=SystemBlock(
         ibrav=2,
-        A=6.46,
+        A=5.66,
         nat=2,
         ntyp=1,
         ecutwfc=70,

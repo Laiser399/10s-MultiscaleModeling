@@ -2,6 +2,7 @@ import os.path
 
 import matplotlib.pyplot as plt
 import numpy as np
+import scipy.optimize as opt
 
 from src.common import get_energy
 
@@ -41,16 +42,52 @@ def extract_volumes_and_energies():
     return volume_list, energy_list
 
 
-volume_list, energy_list = extract_volumes_and_energies()
+# Birch–Murnaghan equation of state
+def state_equation(V, V_0, B_0, B_0_derivative, E_0):
+    temp0 = (V_0 / V) ** (2 / 3)
+    temp1 = (temp0 - 1) ** 3 * B_0_derivative
+    temp2 = (temp0 - 1) ** 2 * (6 - 4 * temp0)
+    return E_0 + 9 * V_0 * B_0 * (temp1 + temp2) / 16
 
-poly_coefficients = np.polyfit(volume_list, energy_list, 2)
+
+def fit_state_equation(volume_list, energy_list):
+    volume_lb, volume_rb = min(volume_list), max(volume_list)
+
+    min_energy = min(energy_list)
+    energy_lb, energy_rb = min_energy * 0.9, min_energy * 1.1
+    if energy_lb > energy_rb:
+        energy_lb, energy_rb = energy_rb, energy_lb
+
+    optimized_values, _ = opt.curve_fit(
+        state_equation,
+        volume_list,
+        energy_list,
+        bounds=(
+            [volume_lb, -np.inf, -np.inf, energy_lb],
+            [volume_rb, np.inf, np.inf, energy_rb]
+        ),
+        maxfev=4000
+    )
+
+    return optimized_values
+
+
+volume_list, energy_list = extract_volumes_and_energies()
+V_0, B_0, B_0_derivative, E_0 = fit_state_equation(volume_list, energy_list)
+
+print(f'{V_0 = }')
+print(f'{B_0 = }')
+print(f'{B_0_derivative = }')
+print(f'{E_0 = }')
 
 
 def show_graph():
     plt.plot(volume_list, energy_list, '.', label='Actual energies')
-    arg = np.linspace(170, 215, 100)
-    values = np.polyval(poly_coefficients, arg)
+
+    arg = np.linspace(168, 216, 100)
+    values = state_equation(arg, V_0, B_0, B_0_derivative, E_0)
     plt.plot(arg, values, label='Fitted curve')
+
     plt.xlabel('Volume [$\\AA^3$]')
     plt.ylabel('Energy [eV]')
     plt.title('Fit result')
@@ -60,11 +97,3 @@ def show_graph():
 
 
 show_graph()
-
-equilibrium_volume = -poly_coefficients[1] / poly_coefficients[0] / 2 * 4
-equilibrium_lattice_constant = equilibrium_volume ** (1 / 3)
-bulk_modulus = -poly_coefficients[1] * hard_to_name_coefficient
-
-print(f'{equilibrium_volume = } A^3')
-print(f'{equilibrium_lattice_constant = } A')
-print(f'{bulk_modulus = } GPa')

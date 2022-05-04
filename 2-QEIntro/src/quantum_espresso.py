@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Sequence, Optional
 
+import numpy as np
 from pydantic import BaseModel
 
 
@@ -79,6 +80,42 @@ class CellBlock(BaseBlock):
     def create_block(self) -> str:
         return f'&cell\n' \
                f'/\n'
+
+
+class CellParametersBlock(BaseBlock):
+    options: Sequence[str] = tuple()
+    vectors: Optional[np.ndarray]
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    def create_block(self) -> str:
+        options_str = ''.join(map(
+            lambda x: f' {x}',
+            self.options
+        ))
+
+        rows_str = self.get_rows_str()
+
+        return f'CELL_PARAMETERS{options_str}\n' \
+               f'{rows_str}'
+
+    def get_rows_str(self):
+        if self.vectors is None:
+            return ''
+
+        rows = [
+            ' '.join(map(
+                lambda x: str(x),
+                row
+            ))
+            for row in self.vectors
+        ]
+
+        return ''.join(map(
+            lambda x: f'    {x}\n',
+            rows
+        ))
 
 
 class CustomBlock(BaseBlock):

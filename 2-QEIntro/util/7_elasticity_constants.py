@@ -124,8 +124,8 @@ deformation_descriptors = [
     DeformationDescriptor(name='C_22', deformation_matrix_generator=create_C_22),
     DeformationDescriptor(name='C_33', deformation_matrix_generator=create_C_33),
     DeformationDescriptor(name='C_44', deformation_matrix_generator=create_C_44, relax=True),
-    DeformationDescriptor(name='C_55', deformation_matrix_generator=create_C_55),
-    DeformationDescriptor(name='C_66', deformation_matrix_generator=create_C_66),
+    DeformationDescriptor(name='C_55', deformation_matrix_generator=create_C_55, relax=True),
+    DeformationDescriptor(name='C_66', deformation_matrix_generator=create_C_66, relax=True),
     DeformationDescriptor(name='C_12', deformation_matrix_generator=create_C_12),
     DeformationDescriptor(name='C_13', deformation_matrix_generator=create_C_13),
     DeformationDescriptor(name='C_23', deformation_matrix_generator=create_C_23),
@@ -149,11 +149,8 @@ def get_console_output_file_path(config_name):
     return posixpath.join(base_output_dir, config_name, 'console_output.txt')
 
 
-def create_configuration(name, cell_parameters, relax=False):
-    # todo изменить под свой вариант
-
+def create_configuration(name, cell_parameters_matrix, relax=False):
     calculation = 'relax' if relax else 'scf'
-
     ions = IonsBlock() if relax else None
 
     configuration = QEConfiguration(
@@ -165,11 +162,11 @@ def create_configuration(name, cell_parameters, relax=False):
         ),
         system=SystemBlock(
             ibrav=0,
-            A=6.64970915332,
+            A=5.758879396279999,
             nat=2,
             ntyp=1,
-            ecutwfc=70,
-            ecutrho=560,
+            ecutwfc=60,
+            ecutrho=480,
         ),
         electrons=ElectronsBlock(
             conv_thr=1e-8
@@ -179,27 +176,27 @@ def create_configuration(name, cell_parameters, relax=False):
             CustomBlock(
                 block_name='ATOMIC_SPECIES',
                 lines=[
-                    'Sn 118.71 Sn_pbe_v1.uspp.F.UPF'
+                    'Ge 72.63 ge_pbe_v1.4.uspp.F.UPF'
                 ]
             ),
             CustomBlock(
                 block_name='ATOMIC_POSITIONS',
                 options=['crystal'],
                 lines=[
-                    'Sn 0.0 0.0 0.0',
-                    'Sn 0.25 0.25 0.25'
+                    'Ge 0.0 0.0 0.0',
+                    'Ge 0.25 0.25 0.25'
                 ]
             ),
             CustomBlock(
                 block_name='K_POINTS',
                 options=['automatic'],
                 lines=[
-                    '8 8 8 0 0 0'
+                    '10 10 10 0 0 0'
                 ]
             ),
             CellParametersBlock(
                 options=['alat'],
-                vectors=cell_parameters
+                vectors=cell_parameters_matrix
             )
         ]
     )
@@ -222,7 +219,11 @@ def create_qe_config_params() -> List[QEConfigParams]:
         for params_descr in deformation_params_descriptors:
             deformation_matrix = deformation_descr.deformation_matrix_generator(params_descr.alpha)
             cell_parameters_matrix = base_cell_parameters.dot(deformation_matrix)
-            name = f'{deformation_descr.name}_{params_descr.name}'
+
+            name_parts = [deformation_descr.name, params_descr.name]
+            if deformation_descr.relax:
+                name_parts.append('relax')
+            name = '_'.join(name_parts)
 
             deformations.append(QEConfigParams(
                 name=name,

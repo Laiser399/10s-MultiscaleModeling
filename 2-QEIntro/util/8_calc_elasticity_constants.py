@@ -9,7 +9,7 @@ ry_to_ev_coefficient = 13.6056980659
 hard_to_name_coefficient = 160.2
 
 alpha = 0.01
-lattice_constant = 6.64970915332
+lattice_constant = 5.758879396279999
 system_volume = lattice_constant ** 3 / 4
 
 
@@ -17,7 +17,7 @@ def get_console_output_file_path(config_name):
     return posixpath.join(base_output_dir, config_name, 'console_output.txt')
 
 
-transformation_names = [
+deformation_names = [
     'B',
     'C_11',
     'C_22',
@@ -30,15 +30,30 @@ transformation_names = [
     'C_23',
 ]
 
+relaxing_deformations = {
+    'C_44',
+    'C_55',
+    'C_66',
+}
+
+
+def get_config_names(deformation_name):
+    low_config_name = f'{deformation_name}_low'
+    high_config_name = f'{deformation_name}_high'
+    if deformation_name in relaxing_deformations:
+        low_config_name += '_relax'
+        high_config_name += '_relax'
+    return low_config_name, high_config_name
+
 
 def load_energies():
     energies = {
         'normal': ry_to_ev_coefficient * get_energy(get_console_output_file_path('normal'))
     }
 
-    for transformation_name in transformation_names:
-        low_config_name = f'{transformation_name}_low'
-        high_config_name = f'{transformation_name}_high'
+    for deformation_name in deformation_names:
+        low_config_name, high_config_name = get_config_names(deformation_name)
+
         energies[low_config_name] = ry_to_ev_coefficient * get_energy(get_console_output_file_path(low_config_name))
         energies[high_config_name] = ry_to_ev_coefficient * get_energy(get_console_output_file_path(high_config_name))
 
@@ -48,10 +63,12 @@ def load_energies():
 energies = load_energies()
 
 
-def calculate_diff(transformation_name):
-    low_energy = energies[f'{transformation_name}_low']
+def calculate_diff(deformation_name):
+    low_config_name, high_config_name = get_config_names(deformation_name)
+
+    low_energy = energies[low_config_name]
     normal_energy = energies['normal']
-    high_energy = energies[f'{transformation_name}_high']
+    high_energy = energies[high_config_name]
 
     res = (low_energy - 2 * normal_energy + high_energy) / alpha ** 2
     res *= hard_to_name_coefficient

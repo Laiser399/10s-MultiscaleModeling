@@ -36,7 +36,7 @@ def extract_volumes_and_energies():
         output_file_path = get_console_output_file_path(name)
         energy = ry_to_ev_coefficient * get_energy(output_file_path)
 
-        volume_list.append(lattice_constant ** 3)
+        volume_list.append(lattice_constant ** 3 / 4)
         energy_list.append(energy)
 
     return volume_list, energy_list
@@ -75,16 +75,16 @@ def fit_state_equation(volume_list, energy_list):
 volume_list, energy_list = extract_volumes_and_energies()
 V_0, B_0, B_0_derivative, E_0 = fit_state_equation(volume_list, energy_list)
 
-print(f'{V_0 = }')
-print(f'{B_0 = }')
-print(f'{B_0_derivative = }')
-print(f'{E_0 = }')
+print(f'{V_0 = } A^3')
+print(f'B_0 = {B_0 * hard_to_name_coefficient} GPa')
+print(f'B_0\' = {B_0_derivative}')
+print(f'{E_0 = } eV')
 
 
 def show_graph():
     plt.plot(volume_list, energy_list, '.', label='Actual energies')
 
-    arg = np.linspace(168, 216, 100)
+    arg = np.linspace(42, 54, 100)
     values = state_equation(arg, V_0, B_0, B_0_derivative, E_0)
     plt.plot(arg, values, label='Fitted curve')
 
